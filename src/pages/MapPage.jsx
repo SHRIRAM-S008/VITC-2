@@ -1,12 +1,12 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, ZoomControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useStore } from '../store/useStore'
 import { StatusBadge, RiskBadge } from '../components/shared/Badge'
 import { STATUSES, ZONES } from '../lib/formatters'
-import { ArrowRight, Filter, Globe, Layers, Navigation, Search, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Filter, Globe, Layers, Navigation, Search, X, MapPin, Building2, ShieldCheck, Activity } from 'lucide-react'
 import PageHeader from '../components/shared/PageHeader'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,15 +23,16 @@ L.Icon.Default.mergeOptions({
 })
 
 const STATUS_COLORS = {
-    'Operational': '#10b981',
-    'Under Maintenance': '#f59e0b',
-    'Critical': '#ef4444',
-    'Decommissioned': '#64748b',
+    'Operational': '#10b981', // Emerald 500
+    'Under Maintenance': '#f59e0b', // Amber 500
+    'Critical': '#ef4444', // Rose 500
+    'Decommissioned': '#64748b', // Slate 500
 }
 
 export default function MapPage() {
     const navigate = useNavigate()
     const { assets, filters, setFilter, resetFilters, categories } = useStore()
+    const [sidebarVisible, setSidebarVisible] = useState(true)
 
     const mappable = useMemo(() => assets.filter(a =>
         a.latitude && a.longitude &&
@@ -43,119 +44,127 @@ export default function MapPage() {
     const CENTER = [13.0827, 80.2707] // Chennai
 
     return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 animate-in fade-in duration-500">
+        <div className="flex h-screen overflow-hidden bg-slate-50 animate-in fade-in duration-500 relative">
 
-            {/* Left Control Panel */}
-            <aside className="w-80 shrink-0 bg-white border-r border-slate-200/60 flex flex-col z-10 shadow-xl shadow-slate-200/50">
-                <div className="p-6 border-b border-slate-50 bg-slate-900 text-white">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Navigation size={14} className="text-blue-400" />
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Geo-Spatial Intelligence</h2>
-                    </div>
-                    <p className="text-xl font-black tracking-tight">Real-time Overlay</p>
-                    <div className="mt-4 flex items-center justify-between">
-                        <Badge className="bg-white/10 text-white border-none text-[10px] font-black uppercase tracking-widest">
-                            {mappable.length} Nodes Active
-                        </Badge>
-                        <Button variant="ghost" size="icon" onClick={resetFilters} className="h-6 w-6 text-slate-400 hover:text-white rounded-lg">
+            {/* Professional Floating Control Panel */}
+            <aside className={cn(
+                "fixed top-6 left-6 bottom-6 w-80 bg-white border border-slate-200/60 rounded-3xl shadow-2xl flex flex-col z-[1000] transition-all duration-500 ease-in-out overflow-hidden transform",
+                sidebarVisible ? "translate-x-0 opacity-100" : "-translate-x-[110%] opacity-0"
+            )}>
+                {/* Header Profile */}
+                <div className="p-7 bg-white border-b border-slate-100">
+                    <div className="flex items-center justify-between mb-5">
+                        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-emerald-700 hover:text-emerald-800 transition-colors font-bold text-[10px] uppercase tracking-[0.2em] leading-none">
+                            <ArrowLeft size={16} /> Analytics
+                        </button>
+                        <button onClick={() => setSidebarVisible(false)} className="h-8 w-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all">
                             <X size={14} />
-                        </Button>
+                        </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Geo-Spatial Intelligence</h2>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <MapPin size={12} className="text-emerald-500" /> Dynamic Asset Overlay
+                        </p>
+                    </div>
+
+                    <div className="mt-6 flex items-center gap-2">
+                        <Badge className="bg-emerald-50 text-emerald-700 border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+                            {mappable.length} Active Nodes
+                        </Badge>
+                        <Badge className="bg-slate-50 text-slate-500 border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+                            Live Feed
+                        </Badge>
                     </div>
                 </div>
 
                 <ScrollArea className="flex-1">
-                    <div className="p-6 space-y-8">
+                    <div className="p-7 space-y-10">
                         {/* Status Filter */}
-                        <section className="space-y-4">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-4 h-0.5 bg-slate-200 rounded-full" /> Operational Status
+                        <section className="space-y-5">
+                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] flex items-center justify-between">
+                                Status Analysis
+                                <span className="h-[1px] flex-1 bg-slate-100 ml-4" />
                             </h3>
                             <div className="grid grid-cols-1 gap-1.5">
                                 <button
                                     onClick={() => setFilter('status', 'All')}
                                     className={cn(
-                                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all",
-                                        filters.status === 'All' ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"
+                                        "flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold transition-all border",
+                                        filters.status === 'All'
+                                            ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/10"
+                                            : "bg-white text-slate-500 border-slate-100 hover:bg-slate-50"
                                     )}
                                 >
                                     <span>All Units</span>
-                                    {filters.status === 'All' && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+                                    <Globe size={14} className={filters.status === 'All' ? "text-emerald-400" : "text-slate-300"} />
                                 </button>
                                 {STATUSES.map(s => (
                                     <button
                                         key={s}
                                         onClick={() => setFilter('status', s)}
                                         className={cn(
-                                            "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all",
-                                            filters.status === s ? "bg-slate-900 text-white shadow-lg shadow-slate-200" : "text-slate-500 hover:bg-slate-50"
+                                            "flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold transition-all border border-transparent",
+                                            filters.status === s
+                                                ? "bg-white text-slate-900 border-slate-200 shadow-sm"
+                                                : "text-slate-500 hover:bg-slate-50"
                                         )}
                                     >
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-2 h-2 rounded-full ring-2 ring-offset-2 ring-transparent" style={{ backgroundColor: STATUS_COLORS[s] }} />
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] }} />
                                             <span>{s}</span>
                                         </div>
+                                        {filters.status === s && <div className="w-1 h-1 rounded-full bg-slate-900" />}
                                     </button>
                                 ))}
                             </div>
                         </section>
 
-                        {/* Zone Filter */}
-                        <section className="space-y-4">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-4 h-0.5 bg-slate-200 rounded-full" /> Territory
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => setFilter('zone', 'All')}
-                                    className={cn(
-                                        "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all border",
-                                        filters.zone === 'All' ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
-                                    )}
-                                >
-                                    All Zones
-                                </button>
-                                {ZONES.map(z => (
-                                    <button
-                                        key={z}
-                                        onClick={() => setFilter('zone', z)}
-                                        className={cn(
-                                            "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all border",
-                                            filters.zone === z ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
-                                        )}
-                                    >
-                                        {z}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Category Filter */}
-                        <section className="space-y-4 pt-2">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-4 h-0.5 bg-slate-200 rounded-full" /> Category Type
+                        {/* Inventory Composition */}
+                        <section className="space-y-5">
+                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] flex items-center justify-between">
+                                Asset Categories
+                                <span className="h-[1px] flex-1 bg-slate-100 ml-4" />
                             </h3>
                             <div className="grid grid-cols-1 gap-1">
                                 <button
                                     onClick={() => setFilter('category', 'All')}
                                     className={cn(
-                                        "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all",
-                                        filters.category === 'All' ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
+                                        "flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[14px] font-bold transition-all border w-full",
+                                        filters.category === 'All'
+                                            ? "bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/10"
+                                            : "bg-white text-slate-600 border-slate-100 hover:border-slate-200 hover:bg-slate-50"
                                     )}
                                 >
-                                    <Layers size={14} className="text-slate-300" />
-                                    <span>Global Inventory</span>
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all",
+                                        filters.category === 'All' ? "bg-white/10" : "bg-slate-50 border border-slate-100"
+                                    )}>
+                                        🗄️
+                                    </div>
+                                    <span className="flex-1 text-left">Consolidated Registry</span>
+                                    {filters.category === 'All' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                                 </button>
                                 {categories.map(c => (
                                     <button
                                         key={c.id}
                                         onClick={() => setFilter('category', c.id)}
                                         className={cn(
-                                            "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all",
-                                            filters.category === c.id ? "bg-slate-100 text-slate-900 border-l-2 border-slate-900 rounded-l-none" : "text-slate-500 hover:bg-slate-50"
+                                            "flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[14px] font-bold transition-all border group w-full",
+                                            filters.category === c.id
+                                                ? "bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/10"
+                                                : "bg-white text-slate-600 border-slate-100 hover:border-slate-200 hover:bg-slate-50"
                                         )}
                                     >
-                                        <span className="text-base group-hover:scale-125 transition-transform">{c.icon}</span>
-                                        <span>{c.name}</span>
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all",
+                                            filters.category === c.id ? "bg-white/10" : "bg-slate-50 border border-slate-100 group-hover:scale-110"
+                                        )}>
+                                            {c.icon}
+                                        </div>
+                                        <span className="flex-1 text-left">{c.name}</span>
+                                        {filters.category === c.id && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                                     </button>
                                 ))}
                             </div>
@@ -163,11 +172,26 @@ export default function MapPage() {
                     </div>
                 </ScrollArea>
 
-                <div className="p-6 bg-slate-50 border-t border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Satellite Reference: OS-V3</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">Continuous Geo-Sync Active</p>
+                <div className="p-7 bg-slate-50 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Sync</span>
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-[85%] animate-pulse" />
+                    </div>
                 </div>
             </aside>
+
+            {/* Sidebar Toggle (Only visible when sidebar hidden) */}
+            {!sidebarVisible && (
+                <button
+                    onClick={() => setSidebarVisible(true)}
+                    className="fixed top-8 left-8 z-[1000] w-12 h-12 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-all animate-in slide-in-from-left-10"
+                >
+                    <Navigation size={20} className="text-emerald-600" />
+                </button>
+            )}
 
             {/* Main Interactive Map */}
             <main className="flex-1 relative">
@@ -182,11 +206,13 @@ export default function MapPage() {
                         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     />
 
+                    <ZoomControl position="bottomright" />
+
                     {mappable.map(asset => (
                         <CircleMarker
                             key={asset.id}
                             center={[asset.latitude, asset.longitude]}
-                            radius={8}
+                            radius={mappable.length > 50 ? 6 : 8}
                             pathOptions={{
                                 fillColor: STATUS_COLORS[asset.status] || '#64748b',
                                 fillOpacity: 0.9,
@@ -196,64 +222,74 @@ export default function MapPage() {
                             }}
                         >
                             <Popup className="custom-popup">
-                                <div className="min-w-[240px] p-2 space-y-4 animate-in zoom-in-95 duration-200">
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-lg shrink-0 shadow-lg">
-                                            {asset.categories?.icon || '📍'}
+                                <div className="min-w-[280px] p-0 overflow-hidden flex flex-col bg-white rounded-2xl shadow-2xl">
+                                    <div className="p-6 bg-slate-900 text-white">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl shrink-0 backdrop-blur-md border border-white/10">
+                                                {asset.categories?.icon || '📍'}
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Registry Ref</p>
+                                                <p className="font-mono text-xs font-bold text-white uppercase">{asset.id.split('-')[0]}</p>
+                                            </div>
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-black text-slate-900 tracking-tight leading-tight mb-0.5 truncate">{asset.name}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">{asset.address}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-                                        <div className="space-y-1">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Live State</p>
-                                            <StatusBadge status={asset.status} className="scale-75 origin-left" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Risk Factor</p>
-                                            <RiskBadge label={asset.risk_label} className="scale-75 origin-left" />
+                                        <div className="mt-6 space-y-1">
+                                            <p className="text-lg font-bold text-white tracking-tight truncate">{asset.name}</p>
+                                            <p className="text-[11px] font-bold text-white/50 uppercase tracking-wider truncate flex items-center gap-2">
+                                                <MapPin size={10} /> {asset.address || 'Geo-Location Logged'}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <Button
-                                        onClick={() => navigate(`/assets/${asset.id}`)}
-                                        className="w-full h-8 rounded-lg bg-slate-900 font-bold uppercase text-[9px] tracking-[0.1em] mt-2 group"
-                                    >
-                                        Inspect Entity <ArrowRight size={10} className="ml-2 group-hover:translate-x-1 transition-transform" />
-                                    </Button>
+                                    <div className="p-6 space-y-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Status</p>
+                                                <StatusBadge status={asset.status} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Risk Class</p>
+                                                <RiskBadge label={asset.risk_label} />
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            onClick={() => navigate(`/assets/${asset.id}`)}
+                                            className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[11px] tracking-widest group shadow-lg shadow-emerald-600/10"
+                                        >
+                                            Inspect Infrastructure <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </Popup>
                         </CircleMarker>
                     ))}
                 </MapContainer>
 
-                {/* Floating Map Controls & Overlays */}
-                <div className="absolute top-6 right-6 z-[1000] space-y-3">
-                    <Card className="border-none shadow-2xl bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden min-w-[160px]">
-                        <div className="p-4 flex flex-col items-center">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Network Density</p>
-                            <div className="flex items-end gap-1">
-                                <span className="text-4xl font-black text-slate-900 tabular-nums">
+                {/* Top Right Legend & Data Cards */}
+                <div className="absolute top-8 right-8 z-[1000] space-y-4">
+                    <Card className="border border-slate-200/60 shadow-2xl bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden w-[220px]">
+                        <div className="p-5 flex flex-col items-center">
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Network Density</p>
+                            <div className="flex items-end gap-1.5">
+                                <span className="text-5xl font-bold text-slate-900 tracking-tighter tabular-nums leading-none">
                                     {mappable.length}
                                 </span>
-                                <span className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Nodes</span>
+                                <span className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-tighter">Nodes</span>
                             </div>
                         </div>
-                        <div className="px-4 py-2 bg-slate-900/5 flex items-center justify-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <p className="text-[9px] font-bold text-slate-600 uppercase">Feed Stable</p>
+                        <div className="px-5 py-3 bg-emerald-500/5 border-t border-emerald-500/10 flex items-center justify-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                            <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest">Grid Active</p>
                         </div>
                     </Card>
 
-                    <div className="flex flex-col gap-2">
-                        <Button size="icon" className="h-10 w-10 bg-white hover:bg-slate-50 text-slate-900 border-none shadow-xl rounded-xl">
-                            <Globe size={18} />
+                    <div className="flex flex-col gap-2 scale-90 origin-top-right">
+                        <Button size="icon" className="h-12 w-12 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 shadow-xl rounded-2xl transition-all hover:text-emerald-600">
+                            <Globe size={20} />
                         </Button>
-                        <Button size="icon" className="h-10 w-10 bg-white hover:bg-slate-50 text-slate-900 border-none shadow-xl rounded-xl">
-                            <Layers size={18} />
+                        <Button size="icon" className="h-12 w-12 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 shadow-xl rounded-2xl transition-all hover:text-emerald-600">
+                            <Layers size={20} />
                         </Button>
                     </div>
                 </div>
@@ -262,7 +298,7 @@ export default function MapPage() {
             <style>{`
                 .leaflet-popup-content-wrapper {
                     padding: 0;
-                    border-radius: 1.25rem;
+                    border-radius: 1.5rem;
                     box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
                     border: 0;
                     overflow: hidden;
@@ -273,9 +309,25 @@ export default function MapPage() {
                 }
                 .leaflet-container {
                     cursor: crosshair !important;
+                    background: #f8fafc !important;
                 }
                 .custom-popup .leaflet-popup-tip-container {
                     display: none;
+                }
+                .leaflet-bar {
+                    border: none !important;
+                    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+                }
+                .leaflet-bar a {
+                    background-color: white !important;
+                    color: #475569 !important;
+                    border: 1px solid #f1f5f9 !important;
+                    border-radius: 8px !important;
+                    margin-bottom: 4px !important;
+                }
+                .leaflet-bar a:hover {
+                    color: #059669 !important;
+                    background-color: #f8fafc !important;
                 }
             `}</style>
         </div>

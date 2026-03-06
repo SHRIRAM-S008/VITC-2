@@ -8,9 +8,9 @@ import PageHeader from '../components/shared/PageHeader'
 import { toast } from 'sonner'
 import {
     ArrowLeft, Pencil, Trash2, MapPin, Calendar, Wrench,
-    ClipboardList, AlertTriangle, CheckCircle, Plus, X, Save,
-    History, Info, FileText, HardHat, ExternalLink, Activity,
-    ShieldCheck, Clock, User
+    ClipboardList, AlertTriangle, Save,
+    History, Info, FileText, HardHat, ExternalLink,
+    ShieldCheck, Clock, User, Building2, Hash, Layers
 } from 'lucide-react'
 import {
     Tabs,
@@ -45,7 +45,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 const MAINT_TYPES = ['Routine Inspection', 'Emergency Repair', 'Scheduled Maintenance', 'Upgrade', 'Decommission']
@@ -87,14 +87,14 @@ export default function AssetDetailPage() {
     if (!asset) {
         return (
             <div className="p-12 max-w-4xl mx-auto flex items-center justify-center min-h-[50vh]">
-                <Card className="w-full text-center border-dashed border-slate-200 bg-slate-50/50">
-                    <CardContent className="p-12 space-y-4">
-                        <AlertTriangle size={48} className="mx-auto text-slate-200" />
-                        <div className="space-y-1">
-                            <CardTitle className="text-lg font-black uppercase text-slate-900">Entity Not Found</CardTitle>
-                            <CardDescription className="text-slate-500 font-medium">The requested infrastructure asset could not be retrieved from the central registry.</CardDescription>
+                <Card className="w-full text-center border-dashed border-slate-200 bg-slate-50/50 rounded-3xl">
+                    <CardContent className="p-16 space-y-6">
+                        <AlertTriangle size={64} className="mx-auto text-slate-200" />
+                        <div className="space-y-2">
+                            <CardTitle className="text-2xl font-bold text-slate-900 leading-tight">Entity Not Found</CardTitle>
+                            <CardDescription className="text-lg text-slate-500 font-medium">The requested infrastructure asset could not be retrieved from the database.</CardDescription>
                         </div>
-                        <Button variant="outline" onClick={() => navigate('/assets')} className="rounded-xl border-slate-200">
+                        <Button variant="outline" onClick={() => navigate('/assets')} className="rounded-xl border-slate-200 h-12 px-8 font-bold text-sm text-slate-600">
                             Return to Registry
                         </Button>
                     </CardContent>
@@ -115,13 +115,13 @@ export default function AssetDetailPage() {
         })
 
         setAssets(assets.filter(a => a.id !== id))
-        toast.success(`Asset ${id} successfully purged from live registry.`)
+        toast.success(`Asset ${id} successfully removed.`)
         navigate('/assets')
     }
 
     const handleMaintSubmit = async (e) => {
         e.preventDefault()
-        if (!maintForm.performed_by.trim()) { toast.error('Authorized inspector name is mandatory'); return }
+        if (!maintForm.performed_by.trim()) { toast.error('Authorized personnel name is mandatory'); return }
         setSavingMaint(true)
 
         const payload = {
@@ -134,7 +134,7 @@ export default function AssetDetailPage() {
         if (error) { toast.error(error.message); setSavingMaint(false); return }
 
         setMaintenanceLogs([data, ...maintenanceLogs])
-        toast.success('System log updated: Maintenance event recorded.')
+        toast.success('Maintenance record committed')
         setShowMaintModal(false)
         setSavingMaint(false)
         setMaintForm({
@@ -149,406 +149,360 @@ export default function AssetDetailPage() {
     const age = new Date().getFullYear() - (asset.install_year || new Date().getFullYear())
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-            {/* Nav Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 pb-8">
-                <div className="space-y-4">
-                    <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-slate-400 hover:text-slate-900 -ml-2 h-8 font-black uppercase tracking-widest text-[10px]">
-                        <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to Registry
-                    </Button>
-                    <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center shadow-lg">
-                                {asset.categories?.icon || <Activity className="text-white" size={20} />}
-                            </div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{asset.name}</h1>
+        <div className="p-8 max-w-7xl mx-auto space-y-10 animate-in fade-in duration-500">
+            {/* Header Navigation */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div className="space-y-5">
+                    <button onClick={() => navigate(-1)} className="text-emerald-700 hover:text-emerald-800 transition-colors flex items-center gap-2 font-bold text-xs uppercase tracking-[0.15em] leading-none mb-1">
+                        <ArrowLeft size={18} /> Registry Asset Profile
+                    </button>
+                    <div className="flex items-start gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-400 shadow-sm shrink-0">
+                            {asset.categories?.icon || <Building2 size={28} />}
                         </div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <MapPin size={12} className="text-slate-300" /> {asset.address || 'Location Coordinates Pending'}
-                        </p>
+                        <div className="min-w-0">
+                            <h1 className="text-4xl font-bold text-slate-900 tracking-tight leading-none mb-3">{asset.name}</h1>
+                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <MapPin size={14} className="text-slate-400" /> {asset.address || 'Location information pending'}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" onClick={() => navigate(`/assets/${id}/edit`)} className="rounded-xl border-slate-200 font-bold uppercase text-[10px] tracking-widest">
-                        <Pencil className="mr-2 h-3.5 w-3.5" /> Edit Configuration
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" onClick={() => navigate(`/assets/${id}/edit`)} className="rounded-xl border-slate-200 text-slate-700 font-bold text-[13px] h-12 px-6 uppercase tracking-wider">
+                        <Pencil className="mr-2 h-4 w-4 opacity-70" /> Update Config
                     </Button>
-                    <Button variant="outline" onClick={handleDelete} disabled={deleting} className="rounded-xl border-rose-100 text-rose-600 hover:bg-rose-50 font-bold uppercase text-[10px] tracking-widest">
-                        <Trash2 className="mr-2 h-3.5 w-3.5" /> {deleting ? 'Purging...' : 'Decommission'}
+                    <Button variant="outline" onClick={handleDelete} disabled={deleting} className="rounded-xl border-rose-100 text-rose-600 hover:bg-rose-50 font-bold text-[13px] h-12 px-6 uppercase tracking-wider">
+                        <Trash2 className="mr-2 h-4 w-4 opacity-70" /> {deleting ? 'Removing...' : 'Decommission'}
                     </Button>
                 </div>
             </div>
 
-            {/* Visual Status Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-slate-900 text-white shadow-xl shadow-slate-200 border-none px-6 py-4 flex flex-col justify-between">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Registration ID</div>
-                    <div className="font-mono text-lg font-black tracking-tighter text-white/90 truncate">{asset.id}</div>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <Card className="border-slate-200/80 shadow-sm">
+                    <CardContent className="p-6">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Central Serial</p>
+                        <p className="font-mono text-sm font-bold text-slate-700 truncate">{asset.id}</p>
+                    </CardContent>
                 </Card>
 
-                <Card className="bg-white border-slate-200/60 shadow-sm px-6 py-4 flex flex-col justify-between">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Operations</div>
-                    <div className="mt-4"><StatusBadge status={asset.status} /></div>
+                <Card className="border-slate-200/80 shadow-sm">
+                    <CardContent className="p-6">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Availability</p>
+                        <StatusBadge status={asset.status} />
+                    </CardContent>
                 </Card>
 
-                <Card className="bg-white border-slate-200/60 shadow-sm px-6 py-4 flex flex-col justify-between">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Safety Profile</div>
-                    <div className="mt-4"><RiskBadge label={asset.risk_label} /></div>
+                <Card className="border-slate-200/80 shadow-sm">
+                    <CardContent className="p-6">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Integrity</p>
+                        <RiskBadge label={asset.risk_label} />
+                    </CardContent>
                 </Card>
 
-                <Card className="bg-white border-slate-200/60 shadow-sm px-6 py-4 flex flex-col justify-between">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Score</div>
-                    <div className="mt-4 flex items-end gap-1">
-                        <span className="text-3xl font-black text-slate-900 leading-none">{asset.risk_score}</span>
-                        <span className="text-[10px] font-bold text-slate-400 mb-1">/100</span>
-                    </div>
+                <Card className="border-slate-200/80 shadow-sm">
+                    <CardContent className="p-6">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Exposure Metric</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-slate-900 tracking-tight">{asset.risk_score}</span>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">IDX</span>
+                        </div>
+                    </CardContent>
                 </Card>
             </div>
 
             <Tabs defaultValue="overview" onValueChange={setActiveTab} className="w-full">
-                <TabsList className="bg-slate-50 border border-slate-200 p-1 h-12 rounded-2xl w-full md:w-auto">
-                    <TabsTrigger value="overview" className="rounded-xl px-6 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                        <Info size={14} className="mr-2" /> Global Profile
+                <TabsList className="bg-slate-100 p-1.5 rounded-xl border border-slate-200/50 mb-10 inline-flex h-12">
+                    <TabsTrigger value="overview" className="rounded-lg px-8 font-bold text-xs uppercase tracking-[0.1em] data-[state=active]:bg-white data-[state=active]:shadow-sm text-slate-500 data-[state=active]:text-slate-900">
+                        Institutional Profile
                     </TabsTrigger>
-                    <TabsTrigger value="maintenance" className="rounded-xl px-6 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                        <Wrench size={14} className="mr-2" /> Incident Log
-                        {logs.length > 0 && (
-                            <Badge variant="secondary" className="ml-2 h-5 min-w-[20px] px-1 bg-slate-200/50 text-slate-600 font-black text-[9px] border-none shadow-none">
-                                {logs.length}
-                            </Badge>
-                        )}
+                    <TabsTrigger value="maintenance" className="rounded-lg px-8 font-bold text-xs uppercase tracking-[0.1em] data-[state=active]:bg-white data-[state=active]:shadow-sm text-slate-500 data-[state=active]:text-slate-900">
+                        Maintenance Log
+                        {logs.length > 0 && <span className="ml-2 bg-slate-200 text-slate-600 px-2 rounded-full text-[10px]">{logs.length}</span>}
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="rounded-xl px-6 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                        <History size={14} className="mr-2" /> Audit Trail
+                    <TabsTrigger value="history" className="rounded-lg px-8 font-bold text-xs uppercase tracking-[0.1em] data-[state=active]:bg-white data-[state=active]:shadow-sm text-slate-500 data-[state=active]:text-slate-900">
+                        System Audit
                     </TabsTrigger>
                 </TabsList>
 
-                {/* Tabs Content */}
-                <div className="mt-8">
-                    <TabsContent value="overview" className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Detailed Info */}
-                            <div className="lg:col-span-2 space-y-6">
-                                <Card className="border-slate-200/60 shadow-sm overflow-hidden">
-                                    <div className="p-6 border-b border-slate-50 bg-slate-50/30">
-                                        <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                            <FileText size={16} className="text-slate-400" /> Technical Specifications
-                                        </CardTitle>
+                {/* Overvew Tab */}
+                <TabsContent value="overview" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Main Specifications */}
+                        <div className="lg:col-span-8 space-y-8">
+                            <Card className="border-slate-200/80 shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="border-b border-slate-50 bg-slate-50/20 px-8 py-5">
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={18} className="text-slate-400" />
+                                        <CardTitle className="text-sm font-bold text-slate-900 uppercase tracking-widest">Asset Specifications</CardTitle>
                                     </div>
-                                    <CardContent className="p-6">
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-4">
-                                            {[
-                                                { label: 'Category', value: asset.categories?.name, icon: Layers },
-                                                { label: 'Primary Zone', value: asset.zone, icon: MapPin },
-                                                { label: 'Department', value: asset.categories?.department, icon: Building2 },
-                                                { label: 'Commission Date', value: asset.install_year, icon: Calendar },
-                                                { label: 'Service Life', value: asset.install_year ? `${age} Cycles` : 'Pending' },
-                                                { label: 'Asset Reference', value: asset.id.split('-')[0], icon: Hash, mono: true },
-                                            ].map(({ label, value, mono, icon: Icon }) => (
-                                                <div key={label} className="space-y-1">
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                                                    <p className={cn("text-xs font-bold text-slate-900 flex items-center gap-1.5", mono && "font-mono")}>
-                                                        {Icon && <Icon size={12} className="text-slate-300" />}
-                                                        {value || '—'}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-slate-200/60 shadow-sm">
-                                    <div className="p-6 border-b border-slate-50">
-                                        <CardTitle className="text-sm font-black uppercase tracking-widest">Description & Functional Notes</CardTitle>
-                                    </div>
-                                    <CardContent className="p-6 space-y-4">
-                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 italic text-slate-600 text-sm leading-relaxed">
-                                            "{asset.description || 'No system description provided by the recording officer.'}"
-                                        </div>
-                                        {asset.notes && (
-                                            <div className="flex gap-2">
-                                                <div className="w-1 h-auto bg-slate-300 rounded-full" />
-                                                <p className="text-xs font-medium text-slate-500">{asset.notes}</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Secondary Column */}
-                            <div className="space-y-6">
-                                <Card className="border-slate-200/60 shadow-sm">
-                                    <div className="p-6 border-b border-slate-50">
-                                        <CardTitle className="text-sm font-black uppercase tracking-widest">Condition Analysis</CardTitle>
-                                    </div>
-                                    <CardContent className="p-6 space-y-6">
-                                        <div className="space-y-2">
-                                            <div className="flex items-end justify-between">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Health Index</p>
-                                                <span className="text-xl font-black text-slate-900">{asset.condition_score}/10</span>
-                                            </div>
-                                            <ConditionBar score={asset.condition_score} />
-                                        </div>
-
-                                        <Alert className={cn(
-                                            "border-none rounded-xl",
-                                            asset.condition_score >= 8 ? "bg-emerald-50 text-emerald-900"
-                                                : asset.condition_score >= 5 ? "bg-amber-50 text-amber-900"
-                                                    : "bg-rose-50 text-rose-900"
-                                        )}>
-                                            <ShieldCheck size={16} />
-                                            <AlertTitle className="text-[10px] font-black uppercase tracking-widest mb-1">Expert Verdict</AlertTitle>
-                                            <AlertDescription className="text-[11px] font-bold">
-                                                {asset.condition_score >= 8 ? 'Entity is in optimal operational health. No intervention required.'
-                                                    : asset.condition_score >= 5 ? 'Status: Fair. Routine monitoring and periodic inspection advised.'
-                                                        : asset.condition_score >= 3 ? 'Status: Poor. Active maintenance deployment recommended.'
-                                                            : 'WARNING: Critical degradation. Immediate tactical response required.'}
-                                            </AlertDescription>
-                                        </Alert>
-
-                                        <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Event</span>
-                                                <span className="text-xs font-bold text-slate-600">{formatDate(asset.last_maintained)}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Window</span>
-                                                <span className={cn("text-xs font-bold", isOverdue(asset.next_due) ? 'text-rose-600 animate-pulse' : 'text-slate-600')}>
-                                                    {formatDate(asset.next_due)} {isOverdue(asset.next_due) && '⚠'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {asset.image_url && (
-                                    <Card className="border-slate-200/60 shadow-sm overflow-hidden group">
-                                        <div className="aspect-video relative overflow-hidden bg-slate-100">
-                                            <img
-                                                src={asset.image_url}
-                                                alt={asset.name}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-                                            <a
-                                                href={asset.image_url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="absolute bottom-3 right-3 p-2 bg-white/90 rounded-lg shadow-lg hover:bg-white transition-all text-slate-900 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
-                                            >
-                                                <ExternalLink size={14} />
-                                            </a>
-                                        </div>
-                                        <div className="p-3 bg-slate-50 text-center">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Official Photographic Record</p>
-                                        </div>
-                                    </Card>
-                                )}
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="maintenance" className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
-                        <Card className="border-slate-200/60 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-50 flex items-center justify-between gap-4 flex-wrap">
-                                <div>
-                                    <CardTitle className="text-base font-black uppercase text-slate-900 tracking-tight">Incident & Maintenance Logs</CardTitle>
-                                    <CardDescription className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{logs.length} historical events captured</CardDescription>
-                                </div>
-                                <Dialog open={showMaintModal} onOpenChange={setShowMaintModal}>
-                                    <DialogTrigger asChild>
-                                        <Button className="rounded-xl bg-slate-900 shadow-lg shadow-slate-200 font-bold uppercase text-[10px] tracking-widest">
-                                            <Plus className="mr-2 h-4 w-4" /> Log New Deployment
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-lg rounded-3xl border-none shadow-2xl p-0 overflow-hidden">
-                                        <form onSubmit={handleMaintSubmit}>
-                                            <DialogHeader className="p-8 bg-slate-900 text-white">
-                                                <DialogTitle className="text-xl font-black tracking-tight">Maintenance Protocol</DialogTitle>
-                                                <DialogDescription className="text-slate-400 font-medium">Record a new inspection or repair event for the current asset registry.</DialogDescription>
-                                            </DialogHeader>
-                                            <div className="p-8 space-y-6">
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="date" className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Event Date</Label>
-                                                        <Input id="date" type="date" value={maintForm.maintenance_date}
-                                                            onChange={e => setMaintForm({ ...maintForm, maintenance_date: e.target.value })}
-                                                            className="rounded-xl border-slate-200 bg-slate-50/50" required />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="type" className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Event Nature</Label>
-                                                        <select id="type" value={maintForm.maintenance_type}
-                                                            onChange={e => setMaintForm({ ...maintForm, maintenance_type: e.target.value })}
-                                                            className="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50/50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                                                            {MAINT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="inspector" className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Authorized Inspector</Label>
-                                                    <div className="relative">
-                                                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                        <Input id="inspector" placeholder="Personnel ID or Name" value={maintForm.performed_by}
-                                                            onChange={e => setMaintForm({ ...maintForm, performed_by: e.target.value })}
-                                                            className="pl-9 h-10 rounded-xl border-slate-200 bg-slate-50/50" required />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="health" className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Health Index Post-Event (1–10)</Label>
-                                                    <Input id="health" type="number" min={1} max={10} placeholder="Assign score" value={maintForm.condition_after}
-                                                        onChange={e => setMaintForm({ ...maintForm, condition_after: e.target.value })}
-                                                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="notes" className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Observations & Summary</Label>
-                                                    <textarea id="notes" rows={4} value={maintForm.notes}
-                                                        onChange={e => setMaintForm({ ...maintForm, notes: e.target.value })}
-                                                        placeholder="Describe tactical findings or resolution details..."
-                                                        className="w-full p-4 text-xs font-medium border border-slate-200 rounded-2xl bg-slate-50/50 focus:outline-none focus:ring-1 focus:ring-slate-400 resize-none transition-all" />
-                                                </div>
-                                            </div>
-                                            <DialogFooter className="p-8 bg-slate-50 border-t border-slate-100 gap-2">
-                                                <Button type="button" variant="ghost" onClick={() => setShowMaintModal(false)} className="rounded-xl font-bold uppercase text-[10px] tracking-widest text-slate-400">Cancel</Button>
-                                                <Button type="submit" disabled={savingMaint} className="rounded-xl bg-slate-900 shadow-lg shadow-slate-200 font-bold uppercase text-[10px] tracking-widest">
-                                                    <Save size={14} className="mr-2" /> {savingMaint ? 'Capturing...' : 'Commit Protocol'}
-                                                </Button>
-                                            </DialogFooter>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-
-                            <CardContent className="p-0">
-                                {logs.length === 0 ? (
-                                    <div className="p-20 text-center space-y-4">
-                                        <HardHat size={40} className="mx-auto text-slate-200" />
-                                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Maintenance History Detected</p>
-                                    </div>
-                                ) : (
-                                    <Table>
-                                        <TableHeader className="bg-slate-50/50">
-                                            <TableRow className="hover:bg-transparent border-slate-200/60">
-                                                <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500">Event Date</TableHead>
-                                                <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500">Classification</TableHead>
-                                                <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500">Authorized Inspector</TableHead>
-                                                <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500">Post-Health</TableHead>
-                                                <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500">Technical Notes</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {logs.map(log => (
-                                                <TableRow key={log.id} className="hover:bg-slate-50/50 border-slate-100 transition-colors">
-                                                    <TableCell className="text-[11px] font-black text-slate-900 tabular-nums">{formatDate(log.maintenance_date)}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className={cn(
-                                                            "rounded-lg font-bold text-[9px] uppercase tracking-tighter px-2 py-0.5",
-                                                            log.maintenance_type === 'Emergency Repair' ? "bg-rose-50 text-rose-600 border-rose-100" :
-                                                                log.maintenance_type === 'Routine Inspection' ? "bg-indigo-50 text-indigo-600 border-indigo-100" :
-                                                                    "bg-slate-50 text-slate-600 border-slate-200"
-                                                        )}>
-                                                            {log.maintenance_type}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-xs font-bold text-slate-700">{log.performed_by}</TableCell>
-                                                    <TableCell>
-                                                        {log.condition_after ? (
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[11px] font-black text-slate-900">{log.condition_after}</span>
-                                                                <div className="w-8 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                                                    <div
-                                                                        className={cn("h-full", log.condition_after > 7 ? "bg-emerald-500" : log.condition_after > 4 ? "bg-amber-400" : "bg-rose-500")}
-                                                                        style={{ width: `${log.condition_after * 10}%` }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        ) : '—'}
-                                                    </TableCell>
-                                                    <TableCell className="text-xs font-medium text-slate-500 max-w-[300px] leading-relaxed italic">
-                                                        {log.notes || 'No observation summary captured.'}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="history" className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
-                        <Card className="border-slate-200/60 shadow-sm">
-                            <CardHeader className="p-6 border-b border-slate-50">
-                                <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                    System Audit Trail
-                                </CardTitle>
-                                <CardDescription className="text-xs">Chronological record of all metadata mutations and registry updates.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                {loadingHistory ? (
-                                    <div className="p-20 text-center space-y-3">
-                                        <Activity size={32} className="mx-auto text-slate-200 animate-spin" />
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Querying Audit Core...</p>
-                                    </div>
-                                ) : historyLog.length === 0 ? (
-                                    <div className="p-20 text-center space-y-4">
-                                        <ClipboardList size={40} className="mx-auto text-slate-200" />
-                                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Audit Logs Clean</p>
-                                    </div>
-                                ) : (
-                                    <div className="divide-y divide-slate-100">
-                                        {historyLog.map(entry => (
-                                            <div key={entry.id} className="p-6 flex items-start justify-between gap-6 hover:bg-slate-50/30 transition-colors">
-                                                <div className="flex items-start gap-4">
-                                                    <div className={cn(
-                                                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm font-black text-[10px]",
-                                                        entry.action_type === 'DELETE' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                                            entry.action_type === 'CREATE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                                                'bg-sky-50 text-sky-600 border border-sky-100'
-                                                    )}>
-                                                        {entry.action_type.substring(0, 3)}
-                                                    </div>
-                                                    <div className="space-y-2 py-0.5">
-                                                        <p className="text-sm font-black text-slate-900 leading-none tracking-tight">System Registry Update</p>
-                                                        {entry.changed_fields?.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1.5">
-                                                                {(Array.isArray(entry.changed_fields) ? entry.changed_fields : []).map(field => (
-                                                                    <Badge key={field} variant="outline" className="rounded-md font-mono text-[9px] uppercase border-slate-200 text-slate-500 py-0 leading-tight">
-                                                                        {field}
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                                            <User size={10} /> {entry.performed_by}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right shrink-0">
-                                                    <p className="text-xs font-black text-slate-900 tabular-nums">{formatDate(entry.created_at)}</p>
-                                                    <div className="flex items-center justify-end gap-1 mt-1">
-                                                        <Clock size={10} className="text-slate-300" />
-                                                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">Event Verified</p>
-                                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-10">
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-8">
+                                        {[
+                                            { label: 'Category', value: asset.categories?.name, icon: Layers },
+                                            { label: 'Management Zone', value: asset.zone, icon: MapPin },
+                                            { label: 'Custodial Body', value: asset.categories?.department, icon: Building2 },
+                                            { label: 'Registration Year', value: asset.install_year, icon: Calendar },
+                                            { label: 'Service Cycles', value: asset.install_year ? `${age} Units` : 'Logged', icon: Clock },
+                                            { label: 'Registry Ref', value: asset.id.split('-')[0].toUpperCase(), icon: Hash, mono: true },
+                                        ].map(({ label, value, mono, icon: Icon }) => (
+                                            <div key={label} className="space-y-2.5">
+                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.12em]">{label}</p>
+                                                <div className={cn("text-[15px] font-bold text-slate-900 flex items-center gap-2.5", mono && "font-mono text-slate-600")}>
+                                                    {Icon && <Icon size={16} className="text-slate-300 shrink-0" />}
+                                                    <span className="truncate">{value || 'Pending'}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-slate-200/80 shadow-sm">
+                                <CardHeader className="border-b border-slate-50 px-8 py-5">
+                                    <CardTitle className="text-sm font-bold text-slate-900 uppercase tracking-widest">Description & Methodology</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-10">
+                                    <p className="text-base font-medium text-slate-600 leading-relaxed border-l-[3.5px] border-emerald-500/20 pl-8">
+                                        {asset.description || 'No descriptive metadata recorded for this entry.'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Health Column */}
+                        <div className="lg:col-span-4 space-y-8">
+                            <Card className="border-slate-200/80 shadow-sm">
+                                <CardHeader className="border-b border-slate-50 px-8 py-5">
+                                    <CardTitle className="text-sm font-bold text-slate-900 uppercase tracking-widest">Health Validation</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-8 space-y-10">
+                                    <div className="space-y-5">
+                                        <div className="flex items-baseline justify-between">
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Health Metric</p>
+                                            <span className="text-3xl font-bold text-slate-900 tracking-tight">{asset.condition_score.toFixed(1)} <span className="text-xs text-slate-400">/ 10</span></span>
+                                        </div>
+                                        <ConditionBar score={asset.condition_score} />
+                                    </div>
+
+                                    <div className={cn(
+                                        "p-6 rounded-xl border text-sm font-bold leading-relaxed flex gap-4 shadow-sm",
+                                        asset.condition_score >= 8 ? "bg-emerald-50 border-emerald-100 text-emerald-800"
+                                            : asset.condition_score >= 5 ? "bg-amber-50 border-amber-100 text-amber-800"
+                                                : "bg-rose-50 border-rose-100 text-rose-800"
+                                    )}>
+                                        <ShieldCheck size={20} className="shrink-0 mt-0.5 opacity-80" />
+                                        <span>
+                                            {asset.condition_score >= 8 ? 'Asset exhibits optimal health. No immediate intervention mandated.'
+                                                : asset.condition_score >= 5 ? 'System health is nominal. Preemptive maintenance advised within next cycle.'
+                                                    : asset.condition_score >= 3 ? 'Critical degradation detected. Scheduled intervention required immediately.'
+                                                        : 'Severe failure risk. Immediate structural repair mandated.'}
+                                        </span>
+                                    </div>
+
+                                    <div className="divide-y divide-slate-100 pt-2">
+                                        <div className="py-4 flex justify-between items-center text-xs font-bold uppercase tracking-wider">
+                                            <span className="text-slate-400">Past Audit</span>
+                                            <span className="text-slate-900">{formatDate(asset.last_maintained)}</span>
+                                        </div>
+                                        <div className="py-4 flex justify-between items-center text-xs font-bold uppercase tracking-wider">
+                                            <span className="text-slate-400">Recurrence</span>
+                                            <span className={cn(isOverdue(asset.next_due) ? 'text-rose-600' : 'text-slate-900')}>
+                                                {formatDate(asset.next_due)} {isOverdue(asset.next_due) && '(OVERDUE)'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {asset.image_url && (
+                                <Card className="border-slate-200/80 shadow-sm overflow-hidden bg-slate-50">
+                                    <div className="aspect-video relative">
+                                        <img src={asset.image_url} alt={asset.name} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-slate-900/10" />
+                                        <a href={asset.image_url} target="_blank" rel="noreferrer" className="absolute bottom-4 right-4 p-2.5 bg-white rounded-xl shadow-lg hover:bg-slate-50 transition-all text-slate-600">
+                                            <ExternalLink size={16} />
+                                        </a>
+                                    </div>
+                                    <div className="p-4 text-center border-t border-slate-200">
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none">Photographic Documentation</p>
+                                    </div>
+                                </Card>
+                            )}
+                        </div>
+                    </div>
+                </TabsContent>
+
+                {/* Maintenance Tab */}
+                <TabsContent value="maintenance" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Card className="border-slate-200/80 shadow-sm">
+                        <CardHeader className="border-b border-slate-50 flex flex-row items-center justify-between px-8 py-6">
+                            <div className="space-y-1">
+                                <CardTitle className="text-[16px] font-bold text-slate-900 uppercase tracking-wider">Deployment Ledger</CardTitle>
+                                <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-[0.1em]">{logs.length} validated maintenance records</CardDescription>
+                            </div>
+                            <Dialog open={showMaintModal} onOpenChange={setShowMaintModal}>
+                                <DialogTrigger asChild>
+                                    <Button className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs h-11 px-6 uppercase tracking-widest shadow-lg shadow-emerald-700/10">
+                                        <Plus className="mr-2 h-4 w-4" /> Log Deployment
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border-none shadow-2xl">
+                                    <form onSubmit={handleMaintSubmit}>
+                                        <DialogHeader className="p-10 bg-slate-900 text-white">
+                                            <DialogTitle className="text-2xl font-bold tracking-tight">Maintenance Protocol</DialogTitle>
+                                            <DialogDescription className="text-slate-400 text-sm font-medium mt-1">Commit a new maintenance or inspection event to the permanent ledger.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="p-10 space-y-6">
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Event Date</Label>
+                                                    <Input type="date" value={maintForm.maintenance_date} onChange={e => setMaintForm({ ...maintForm, maintenance_date: e.target.value })} className="h-11 rounded-lg border-slate-200 bg-slate-50 font-bold" required />
+                                                </div>
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Classification</Label>
+                                                    <select value={maintForm.maintenance_type} onChange={e => setMaintForm({ ...maintForm, maintenance_type: e.target.value })} className="w-full h-11 px-4 text-sm font-bold border border-slate-200 rounded-lg bg-slate-50 focus:outline-none">
+                                                        {MAINT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2.5">
+                                                <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Authorized Agency</Label>
+                                                <Input placeholder="Department / Personnel / ID" value={maintForm.performed_by} onChange={e => setMaintForm({ ...maintForm, performed_by: e.target.value })} className="h-11 rounded-lg border-slate-200 bg-slate-50 font-bold" required />
+                                            </div>
+                                            <div className="space-y-2.5">
+                                                <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Final Index (1-10)</Label>
+                                                <Input type="number" min={1} max={10} value={maintForm.condition_after} onChange={e => setMaintForm({ ...maintForm, condition_after: e.target.value })} className="h-11 rounded-lg border-slate-200 bg-slate-50" />
+                                            </div>
+                                            <div className="space-y-2.5">
+                                                <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Operational Observation</Label>
+                                                <textarea rows={4} value={maintForm.notes} onChange={e => setMaintForm({ ...maintForm, notes: e.target.value })} className="w-full p-4 text-sm font-bold border border-slate-200 rounded-lg bg-slate-50 focus:outline-none resize-none" placeholder="Detail all tactical findings and resolutions..." />
+                                            </div>
+                                        </div>
+                                        <DialogFooter className="p-10 bg-slate-50 border-t border-slate-100">
+                                            <Button type="button" variant="ghost" onClick={() => setShowMaintModal(false)} className="text-xs font-bold uppercase text-slate-400 h-11 px-6">Cancel</Button>
+                                            <Button type="submit" disabled={savingMaint} className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold h-11 px-8 text-xs uppercase tracking-[0.1em] shadow-lg">{savingMaint ? 'Logging...' : 'Confirm Ledger Update'}</Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        </CardHeader>
+                        <CardContent className="p-0 overflow-x-auto">
+                            {logs.length === 0 ? (
+                                <div className="p-24 text-center text-slate-300">
+                                    <HardHat size={56} className="mx-auto mb-5 opacity-10" />
+                                    <p className="text-lg font-bold uppercase tracking-widest text-slate-400">Registry log empty for this asset.</p>
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader className="bg-slate-50/50">
+                                        <TableRow className="border-slate-100 h-14">
+                                            <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400 pl-8">Event Date</TableHead>
+                                            <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Nature</TableHead>
+                                            <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Custodial Body</TableHead>
+                                            <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Final Health</TableHead>
+                                            <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400 pr-8">Summary Observation</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {logs.map(log => (
+                                            <TableRow key={log.id} className="border-slate-50 hover:bg-slate-50/40 h-20 transition-all">
+                                                <TableCell className="text-[13px] font-bold text-slate-900 tabular-nums pl-8">{formatDate(log.maintenance_date)}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest rounded-md border-slate-200 text-slate-500 py-1 px-3">
+                                                        {log.maintenance_type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-[13px] font-bold text-slate-700">{log.performed_by}</TableCell>
+                                                <TableCell>
+                                                    {log.condition_after ? (
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={cn("h-full", log.condition_after > 7 ? "bg-emerald-500" : log.condition_after > 4 ? "bg-emerald-300" : "bg-rose-500")}
+                                                                    style={{ width: `${log.condition_after * 10}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-slate-900">{log.condition_after}</span>
+                                                        </div>
+                                                    ) : '—'}
+                                                </TableCell>
+                                                <TableCell className="text-[13px] font-semibold text-slate-500 italic max-w-sm truncate whitespace-nowrap pr-8">
+                                                    {log.notes || 'No summary comments captured.'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Audit Tab */}
+                <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Card className="border-slate-200/80 shadow-sm overflow-hidden">
+                        <CardHeader className="border-b border-slate-50 px-8 py-6">
+                            <CardTitle className="text-[16px] font-bold text-slate-900 uppercase tracking-widest">Chronological Audit Record</CardTitle>
+                            <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-[0.1em]">Validated record of all configuration permutations</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {loadingHistory ? (
+                                <div className="p-32 text-center">
+                                    <Activity size={40} className="mx-auto text-slate-200 animate-spin" />
+                                </div>
+                            ) : historyLog.length === 0 ? (
+                                <div className="p-24 text-center text-slate-300">
+                                    <ClipboardList size={56} className="mx-auto mb-5 opacity-10" />
+                                    <p className="text-lg font-bold uppercase tracking-widest text-slate-400">Audit trail nominal.</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-100 px-8">
+                                    {historyLog.map(entry => (
+                                        <div key={entry.id} className="py-8 flex items-center justify-between group">
+                                            <div className="flex items-center gap-6">
+                                                <div className={cn(
+                                                    "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-[11px] tracking-[0.1em] border-2",
+                                                    entry.action_type === 'DELETE' ? 'bg-rose-50 border-rose-100 text-rose-700' :
+                                                        entry.action_type === 'CREATE' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                                                            'bg-blue-50 border-blue-100 text-blue-700'
+                                                )}>
+                                                    {entry.action_type.toUpperCase().substring(0, 3)}
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <p className="text-[15px] font-bold text-slate-900 tracking-tight">Registry Mutation Event</p>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-xs font-bold text-slate-500 flex items-center gap-2"><User size={14} className="text-slate-300" /> {entry.performed_by}</span>
+                                                        <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                                                        <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-widest">{entry.id.split('-')[0]}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[15px] font-bold text-slate-900 tabular-nums">{formatDate(entry.created_at)}</p>
+                                                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1.5">Protocol Verified</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
             </Tabs>
 
-            {/* Footer Protocol */}
-            <div className="pt-12 pb-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <ShieldCheck size={20} className="text-rose-400 animate-pulse" />
-                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em]">SCIS CODE RED: PROTOCOL ACTIVE</p>
+            {/* Footer */}
+            <div className="pt-12 pb-16 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">
+                <div className="flex items-center gap-4">
+                    <ShieldCheck size={20} className="text-emerald-500" />
+                    <span>Institutional Ledger Verified</span>
                 </div>
-                <div className="flex items-center gap-6">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Operational Ledger verified</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">{id}</span>
+                <div className="flex items-center gap-10">
+                    <span>Registry Instance: LOCAL_SVR_01</span>
+                    <span className="font-mono text-[10px] text-slate-300">{id}</span>
                 </div>
             </div>
         </div>

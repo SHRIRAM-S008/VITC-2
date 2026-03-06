@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import Navbar from './Navbar'
 import Sidebar from './Sidebar'
+import { Menu } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { supabase } from '../../lib/supabase'
 import { generateAlerts } from '../../lib/riskEngine'
@@ -70,7 +70,14 @@ export default function Layout() {
 
             {/* Main content */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
-                <Navbar onMenuClick={() => setSidebarOpen(true)} />
+                {/* Mobile Menu Trigger (Sticky/Floating since Navbar is removed) */}
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-emerald-700 transition-all active:scale-95"
+                >
+                    <Menu size={24} />
+                </button>
+
                 <main className="flex-1 overflow-y-auto bg-slate-50/50">
                     <Outlet />
                 </main>
